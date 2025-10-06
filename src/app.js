@@ -2,20 +2,24 @@ const express = require("express");
 
 const app = express();
 
-app.get("/", (req, res) => {
-    res.send(`${req.method} |  ${req.url}  |  Welcome, to Dashoard.`);
+
+app.get("/user", (req, res) => {
+  res.send({ firstname: "Radhey", lastName: "Shyam" });
 });
 
-
-app.get("/hello", (req, res) => {
-    res.send(`${req.method} |  ${req.url}  |  Hello, from the Server hello.`);
+app.post("/user", (req, res) => {
+    // Logic to save database in DB
+    res.send("Data Successfully saved to the dataase.");
 });
 
-app.get("/test", (req, res) => {
-    res.send(`${req.method} |  ${req.url}  |  Hello, from the Server testing.`);
+app.delete("/user", (req, res) => {
+    res.send("User Deleted Successfully.");
+});
+
+app.use("/test", (req, res) => {
+  res.send("Hello, from the Server hello.! /test");
 });
 
 app.listen(7777, () => {
-    console.log("Server is successfully listening on port 7777....");
+  console.log("Server is successfully listening on port 7777....");
 });
-
