@@ -2,11 +2,33 @@ const express = require("express");
 
 const app = express();
 
-app.get("/user/:userId/:name/:password", (req, res) => {
-  // const userId = req.params.id;
-  console.log(JSON.parse(JSON.stringify(req.params)));
-  res.send({firstname: "Radhey", lastName: "Shyam" });
-});
+app.use(
+  "/user",
+  (req, res, next) => {
+    console.log("Handling the Route User 1 ");
+    // res.send("Response.1.!");
+    next();
+  },
+  (req, res, next) => {
+    console.log("Handling the Route User 2 ");
+    // res.send("Response.2.!");
+    next();
+  },
+  (req, res, next) => {
+    console.log("Handling the Route User 3 ");
+    // res.send("Response.3.!");
+    next();
+  },
+  (req, res, next) => {
+    console.log("Handling the Route User 4 ");
+    // res.send("Response.4.!");
+    next();
+  },
+  (req, res, next) => {
+    console.log("Handling the Route User 5 ");
+    res.send("Response.5.!");
+  }
+);
 
 app.listen(7777, () => {
   console.log("Server is successfully listening on port 7777....");
