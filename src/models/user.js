@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      minLength: 5,
+      minLength: 6,
       maxLength: 50,
     },
     age: {
@@ -36,11 +36,15 @@ const userSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      validate(value) {
-        if (!["male", "female", "others"].includes(value)) {
-          throw new Error("Gender data is not valid");
-        }
+      enum: {
+        values: ["male", "female", "others"],
+        message: "Gender must be male, female, or others",
       },
+      // validate(value) {
+      //   if (!["male", "female", "others"].includes(value)) {
+      //     throw new Error("Gender data is not valid");
+      //   }
+      // },
     },
     photoUrl: {
       type: String,
@@ -55,6 +59,20 @@ const userSchema = new mongoose.Schema(
     },
     skills: {
       type: [String],
+      validate: [
+        {
+          validator: (v) => v.length <= 10,
+          message: "Skills cannot be more than 10",
+        },
+        {
+          validator: (v) => new Set(v).size === v.length,
+          message: "Duplicate skills are not allowed",
+        },
+        {
+          validator: (v) =>
+            new Set(v.map((s) => s.toLowerCase())).size === v.length,
+        },
+      ],
     },
   },
   { timestamps: true }
