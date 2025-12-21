@@ -4,6 +4,7 @@ const app = express();
 const User = require("./models/user");
 const { validateSignUpData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
+const validator = require("validator");
 
 app.use(express.json());
 
@@ -30,6 +31,29 @@ app.post("/signup", async (req, res) => {
 
     await user.save();
     res.send("User Added Successfully..!");
+  } catch (err) {
+    res.status(400).send("ERROR : " + err.message);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const {emailId, password} = req.body;
+    if(!validator.isEmail(emailId)){
+      throw new Error("Invalid credentials");
+    }
+    const user = await User.findOne({emailId: emailId});
+    if(!user) {
+      throw new Error("Invalid credentials");
+    }
+    // console.log("User is before isPassword : ",  user);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if(isPasswordValid) {
+      res.send("Login Successfully!!");
+    } 
+    else {
+      throw new Error("Invalid credentials");
+    }
   } catch (err) {
     res.status(400).send("ERROR : " + err.message);
   }
