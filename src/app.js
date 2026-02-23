@@ -5,8 +5,12 @@ const User = require("./models/user");
 const { validateSignUpData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
 const validator = require("validator");
+const cookieParser = require("cookie-parser");
+const jwt = require("jsonwebtoken");
+const { userAuth } = require("./middlewares/auth");
 
 app.use(express.json());
+app.use(cookieParser());
 
 app.post("/signup", async (req, res) => {
   try {
@@ -38,20 +42,33 @@ app.post("/signup", async (req, res) => {
 
 app.post("/login", async (req, res) => {
   try {
-    const {emailId, password} = req.body;
-    if(!validator.isEmail(emailId)){
+    const { emailId, password } = req.body;
+    if (!validator.isEmail(emailId)) {
       throw new Error("Invalid credentials");
     }
-    const user = await User.findOne({emailId: emailId});
-    if(!user) {
+    const user = await User.findOne({ emailId: emailId });
+    if (!user) {
       throw new Error("Invalid credentials");
     }
+    // console.log("before password");
     // console.log("User is before isPassword : ",  user);
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if(isPasswordValid) {
+    const isPasswordValid = await user.validatePassowrd(password);
+    if (isPasswordValid) {
+      const token = await user.getJWT();
+      // Create a JWT Token
+      // const token = await jwt.sign({ _id: user._id }, "Alpha@123", {
+      //   expiresIn: "7d",
+      // });
+      // console.log(token);
+
+      // Add the token to cookie and send the response back to the user.
+      res.cookie("token", token, {
+        expires: new Date(Date.now() + 8 * 3600000),
+        httpOnly: true,
+        secure: true,
+      });
       res.send("Login Successfully!!");
-    } 
-    else {
+    } else {
       throw new Error("Invalid credentials");
     }
   } catch (err) {
@@ -59,30 +76,22 @@ app.post("/login", async (req, res) => {
   }
 });
 
-// Get User by email
-app.get("/user", async (req, res) => {
-  const userEmail = req.body.emailId;
-
+app.get("/profile", userAuth, async (req, res) => {
   try {
-    const users = await User.findOne({ emailId: userEmail });
-    if (!users) {
-      res.status(404).send("User not Found.");
-    } else {
-      res.send(users);
-    }
+    const user = req.user;
+    res.send(user);
   } catch (err) {
-    res.status(400).send("Something went wrong.");
+    res.status(400).send("ERROR : " + err.message);
   }
 });
 
-// Feed API - GET /feed - get all the users from the database.
-app.get("/feed", async (req, res) => {
-  try {
-    const users = await User.find({});
-    res.send(users);
-  } catch (err) {
-    res.status(400).send("Something went wrong.");
-  }
+app.post("/sendConnectionRequest", userAuth, async (req, res) => {
+  const user = req.user;
+
+  // Sending a Connection Request
+  console.log("Sending a connection Request.");
+
+  res.send(user.firstName + " sent the connection request..");
 });
 
 // Delete a user from the database
@@ -113,7 +122,7 @@ app.patch("/user/:userId", async (req, res) => {
   try {
     const ALLOWED_UPDATES = ["photoUrl", "about", "gender", "age", "skills"];
     const isUpdateAllowed = Object.keys(data).every((k) =>
-      ALLOWED_UPDATES.includes(k)
+      ALLOWED_UPDATES.includes(k),
     );
     if (!isUpdateAllowed) {
       throw new Error("Updates not Allowed.");
@@ -142,6 +151,7 @@ connectDB()
     console.log("Database Connection established...");
     app.listen(7777, () => {
       console.log("Server is successfully listening on port 7777....");
+      console.log("connect")
     });
   })
   .catch((err) => {
